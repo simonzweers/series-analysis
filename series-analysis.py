@@ -103,6 +103,37 @@ def plot_ratings(show_name: str, episodes: list[dict]) -> None:
            xlabel="Season", ylabel="Rating",
            title=f"Episode Rating Distribution — {show_name}")
 
+    # Create line plot
+    all_ratings = [ep["rating"]["average"] for ep in episodes
+                   if ep["rating"]["average"] is not None]
+    episode_order = list(range(1, len(all_ratings) + 1))
+
+    ax2.plot(episode_order, all_ratings, color="C0", linewidth=1, marker="o",
+             markersize=2)
+
+    # Find the episode index where each new season starts
+    season_start_positions = []
+    ep_counter = 0
+    for season in grouped_episodes:
+        season_start_positions.append(ep_counter + 1)  # 1-indexed
+        ep_counter += len(season)
+
+    # Vertical line at the start of each season (skip season 1 — no need
+    # for a divider before the very first episode)
+    for pos in season_start_positions[1:]:
+        ax2.axvline(x=pos - 0.5, color="gray", linestyle="--", linewidth=0.8)
+
+    # Vertical line marking the end of the series
+    ax2.axvline(x=len(all_ratings), color="red", linestyle="--", linewidth=1,
+                label="End of series")
+
+    ax2.set(xticks=season_start_positions,
+            xticklabels=[f"S{i:02d}" for i in range(1, num_seasons + 1)],
+            ylim=(0, 11), yticks=np.arange(1, 11),
+            xlabel="Season", ylabel="Rating",
+            title=f"Rating Over Time — {show_name}")
+
+    ax2.legend(loc="lower left", fontsize=8)
     plt.show()
 
 

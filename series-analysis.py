@@ -10,6 +10,7 @@ Usage:
 import sys
 import requests
 import matplotlib.pyplot as plt
+import numpy as np
 import json
 
 def get_show_id(show_name: str) -> tuple[int, str]:
@@ -74,25 +75,39 @@ def print_ratings(show_name: str, episodes: list[dict]) -> None:
 
 def plot_ratings(show_name: str, episodes: list[dict]) -> None:
 
-    # Get the number of seasons
-    data_boxplot = [[]]
+    # Get the number of seasons and grouped episodes
+    grouped_episodes = group_episodes(episodes)
     num_seasons = get_number_of_seasons(episodes)
-    print(f"\nNumber of Seasons: {num_seasons}")
 
-    fig, ax = plt.subplots()
+    # create subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     positions = list(range(1, num_seasons + 1))
-    print(positions)
-    # VP = ax.boxplot(data_boxplot, positions=positions, widths=1, patch_artist=True,
-    #                 showmeans=False, showfliers=False,
-    #                 medianprops={"color": "white", "linewidth": 0.5},
-    #                 boxprops={"facecolor": "C0", "edgecolor": "white",
-    #                           "linewidth": 0.5},
-    #                 whiskerprops={"color": "C0", "linewidth": 1.5},
-    #                 capprops={"color": "C0", "linewidth": 1.5})
+    ratings_per_season = [
+            [d["rating"]["average"] for d in season]
+            for season in grouped_episodes
+            ]
+    # print(json.dumps(ratings_per_season, indent=4))
+
+    # Create boxplot
+    VP = ax1.boxplot(ratings_per_season, positions=positions, widths=1, patch_artist=True,
+                    showmeans=False, showfliers=False,
+                    medianprops={"color": "white", "linewidth": 0.5},
+                    boxprops={"facecolor": "C0", "edgecolor": "white",
+                              "linewidth": 0.5},
+                    whiskerprops={"color": "C0", "linewidth": 1.5},
+                    capprops={"color": "C0", "linewidth": 1.5})
+
+    ax1.set(xlim=(0, num_seasons + 1), xticks=np.arange(1, num_seasons + 1),
+           xticklabels=[f"S{i:02d}" for i in range(1, num_seasons + 1)],
+           ylim=(0, 11), yticks=np.arange(1, 11),
+           xlabel="Season", ylabel="Rating",
+           title=f"Episode Rating Distribution — {show_name}")
+
+    plt.show()
 
 
 def group_episodes(episodes: list[dict]) -> list[list[dict]]:
-    grouped = [[{}]]
+    grouped = []
     current_season = 1
     num_seasons = get_number_of_seasons(episodes)
     filtered = [
@@ -100,10 +115,11 @@ def group_episodes(episodes: list[dict]) -> list[list[dict]]:
             for d in episodes
             ]
     print(json.dumps(filtered, indent=4))
-    for i in range(0, num_seasons - 1):
+    for i in range(1, num_seasons + 1):
         grouped.append([ep for ep in filtered if ep["season"] == i])
 
     print(json.dumps(grouped, indent=4))
+    return grouped
 
 
 def main():
@@ -121,7 +137,6 @@ def main():
         sys.exit(1)
 
     print_ratings(official_name, episodes)
-    grouped_epsiodes = group_episodes(episodes)
     plot_ratings(official_name, episodes)
 
 

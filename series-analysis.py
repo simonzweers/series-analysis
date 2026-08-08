@@ -9,7 +9,8 @@ Usage:
 
 import sys
 import requests
-
+import matplotlib.pyplot as plt
+import json
 
 def get_show_id(show_name: str) -> tuple[int, str]:
     """Search TVMaze for a show and return its ID and official name."""
@@ -26,7 +27,19 @@ def get_episodes(show_id: int) -> list[dict]:
     """Fetch all episodes for a given show ID."""
     resp = requests.get(f"https://api.tvmaze.com/shows/{show_id}/episodes")
     resp.raise_for_status()
+    print(json.dumps(resp.json(), indent=4))
     return resp.json()
+
+
+def get_number_of_seasons(episodes: list[dict]) -> int:
+    num_seasons = 0
+    current_season = None
+    for ep in episodes:
+        season = ep["season"]
+        if season != current_season:
+            current_season = season
+            num_seasons += 1
+    return num_seasons
 
 
 def print_ratings(show_name: str, episodes: list[dict]) -> None:
@@ -59,6 +72,40 @@ def print_ratings(show_name: str, episodes: list[dict]) -> None:
         )
 
 
+def plot_ratings(show_name: str, episodes: list[dict]) -> None:
+
+    # Get the number of seasons
+    data_boxplot = [[]]
+    num_seasons = get_number_of_seasons(episodes)
+    print(f"\nNumber of Seasons: {num_seasons}")
+
+    fig, ax = plt.subplots()
+    positions = list(range(1, num_seasons + 1))
+    print(positions)
+    # VP = ax.boxplot(data_boxplot, positions=positions, widths=1, patch_artist=True,
+    #                 showmeans=False, showfliers=False,
+    #                 medianprops={"color": "white", "linewidth": 0.5},
+    #                 boxprops={"facecolor": "C0", "edgecolor": "white",
+    #                           "linewidth": 0.5},
+    #                 whiskerprops={"color": "C0", "linewidth": 1.5},
+    #                 capprops={"color": "C0", "linewidth": 1.5})
+
+
+def group_episodes(episodes: list[dict]) -> list[list[dict]]:
+    grouped = [[{}]]
+    current_season = 1
+    num_seasons = get_number_of_seasons(episodes)
+    filtered = [
+            {k: v for k, v in d.items() if k in {"season", "number", "name", "rating"} }
+            for d in episodes
+            ]
+    print(json.dumps(filtered, indent=4))
+    for i in range(0, num_seasons - 1):
+        grouped.append([ep for ep in filtered if ep["season"] == i])
+
+    print(json.dumps(grouped, indent=4))
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python tvmaze_ratings.py \"<show name>\"")
@@ -74,6 +121,8 @@ def main():
         sys.exit(1)
 
     print_ratings(official_name, episodes)
+    grouped_epsiodes = group_episodes(episodes)
+    plot_ratings(official_name, episodes)
 
 
 if __name__ == "__main__":

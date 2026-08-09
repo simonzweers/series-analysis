@@ -28,7 +28,7 @@ def get_episodes(show_id: int) -> list[dict]:
     """Fetch all episodes for a given show ID."""
     resp = requests.get(f"https://api.tvmaze.com/shows/{show_id}/episodes")
     resp.raise_for_status()
-    print(json.dumps(resp.json(), indent=4))
+    # print(json.dumps(resp.json(), indent=4))
     return resp.json()
 
 
@@ -73,14 +73,14 @@ def print_ratings(show_name: str, episodes: list[dict]) -> None:
         )
 
 
-def plot_ratings(show_name: str, episodes: list[dict]) -> None:
+def plot_single_rating(show_name: str, episodes: list[dict], figures: tuple) -> None:
 
     # Get the number of seasons and grouped episodes
     grouped_episodes = group_episodes(episodes)
     num_seasons = get_number_of_seasons(episodes)
 
     # create subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    (ax1, ax2) = figures
     positions = list(range(1, num_seasons + 1))
     ratings_per_season = [
             [d["rating"]["average"] for d in season]
@@ -140,6 +140,18 @@ def plot_ratings(show_name: str, episodes: list[dict]) -> None:
     for y in range(1, 11):
         ax2.axhline(y=y, color="gray", linestyle="--", linewidth=0.5, alpha=0.5, zorder=0)
 
+
+
+def plot_all(id_name_pairs: list[tuple], episodes_list: list[list[dict]]):
+    # create subplots
+    num_series = len(id_name_pairs)
+    fig, axes = plt.subplots(num_series, 2, figsize=(12, 5), squeeze=False)
+    for i in range(0, num_series):
+        series_name = id_name_pairs[i][1]
+        plot_single_rating(series_name, episodes_list[i], (axes[i, 0], axes[i, 1]))
+
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=0.15, hspace=0.8)
     plt.show()
 
 
@@ -151,30 +163,44 @@ def group_episodes(episodes: list[dict]) -> list[list[dict]]:
             {k: v for k, v in d.items() if k in {"season", "number", "name", "rating"} }
             for d in episodes
             ]
-    print(json.dumps(filtered, indent=4))
+    # print(json.dumps(filtered, indent=4))
     for i in range(1, num_seasons + 1):
         grouped.append([ep for ep in filtered if ep["season"] == i])
 
-    print(json.dumps(grouped, indent=4))
+    # print(json.dumps(grouped, indent=4))
     return grouped
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python tvmaze_ratings.py \"<show name>\"")
+        print("Usage: python tvmaze_ratings.py \"<show name>\" ...")
         sys.exit(1)
 
-    show_name = " ".join(sys.argv[1:])
+    # show_name = " ".join(sys.argv[1:])
+    show_names = sys.argv[1:]
+    num_shows = len(show_names)
+
+    print(show_names)
 
     try:
-        show_id, official_name = get_show_id(show_name)
-        episodes = get_episodes(show_id)
+        id_name_pairs = []
+        episodes_list = []
+        for show_name in show_names:
+            pair = get_show_id(show_name)
+            id_name_pairs.append(pair)
+            episodes_list.append(get_episodes(pair[0]))
+        # show_id, official_name = get_show_id(show_name)
+        # episodes = get_episodes(show_id)
+
+        print(id_name_pairs)
     except requests.exceptions.HTTPError:
         print(f"Could not find a show matching: {show_name}")
         sys.exit(1)
 
-    print_ratings(official_name, episodes)
-    plot_ratings(official_name, episodes)
+    for i in range(0, num_shows):
+        print_ratings(id_name_pairs[i][1], episodes_list[i])
+
+    plot_all(id_name_pairs, episodes_list)
 
 
 if __name__ == "__main__":

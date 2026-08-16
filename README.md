@@ -26,3 +26,11 @@ Run the script; example usage:
 python3 series-analysis.py "The Bear"
 python3 series-analysis.py "The Bear" "The Blacklist" "Friends"
 ```
+
+Example of usage on Game of Thrones:
+
+![GoT figure](resources/Series_Analysis_GoT.svg)
+
+Example of usage on Game of Thrones and Breaking Bad:
+
+![GoT figure](resources/Series_Analysis_GoT_BrBa.svg)

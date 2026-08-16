@@ -145,7 +145,7 @@ def plot_single_rating(show_name: str, episodes: list[dict], figures: tuple) -> 
 def plot_all(id_name_pairs: list[tuple], episodes_list: list[list[dict]]):
     # create subplots
     num_series = len(id_name_pairs)
-    fig, axes = plt.subplots(num_series, 2, figsize=(12, 5), squeeze=False)
+    fig, axes = plt.subplots(num_series, 2, figsize=(12, 5), squeeze=False, num="Series Analysis")
     for i in range(0, num_series):
         series_name = id_name_pairs[i][1]
         plot_single_rating(series_name, episodes_list[i], (axes[i, 0], axes[i, 1]))
